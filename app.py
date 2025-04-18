@@ -101,27 +101,42 @@ def generate(track_paths: List[str], prompt: str, duration: int = 30,
     Returns:
         生成した音声ファイルのパス
     """
+    # 入力値の検証
+    if not track_paths or len(track_paths) == 0:
+        return "音声ファイルが選択されていません。少なくとも1つのファイルをアップロードしてください。"
+    
     # モデルをロード
-    model = load_model()
+    try:
+        model = load_model()
+    except Exception as e:
+        print(f"モデルロードエラー: {e}")
+        return f"モデルのロード中にエラーが発生しました: {str(e)}"
     
     # 参照トラックを混合
     try:
         reference_track = blend_tracks(track_paths)
     except ValueError as e:
         return str(e)
+    except Exception as e:
+        print(f"トラック混合エラー: {e}")
+        return f"音声ファイルの処理中にエラーが発生しました: {str(e)}"
     
     # リファレンスオーディオを読み込む
-    reference_audio, sr = torchaudio.load(reference_track)
-    if sr != 48000:
-        reference_audio = torchaudio.transforms.Resample(sr, 48000)(reference_audio)
-    
-    # モノラル化と正規化
-    if reference_audio.size(0) > 1:
-        reference_audio = torch.mean(reference_audio, dim=0, keepdim=True)
-    reference_audio = reference_audio / torch.max(torch.abs(reference_audio))
+    try:
+        reference_audio, sr = torchaudio.load(reference_track)
+        if sr != 48000:
+            reference_audio = torchaudio.transforms.Resample(sr, 48000)(reference_audio)
+        
+        # モノラル化と正規化
+        if reference_audio.size(0) > 1:
+            reference_audio = torch.mean(reference_audio, dim=0, keepdim=True)
+        reference_audio = reference_audio / (torch.max(torch.abs(reference_audio)) + 1e-8)  # ゼロ除算を防止
+    except Exception as e:
+        print(f"音声処理エラー: {e}")
+        return f"音声データの処理中にエラーが発生しました: {str(e)}"
     
     # プロンプトが空の場合はデフォルト値を設定
-    if not prompt.strip():
+    if not prompt or not prompt.strip():
         prompt = "smooth melodic music"
     
     # ジャンルが指定されている場合はプロンプトに追加
@@ -129,23 +144,27 @@ def generate(track_paths: List[str], prompt: str, duration: int = 30,
         prompt = f"{genre}, {prompt}"
     
     # 生成パラメータを設定
-    model.set_generation_params(
-        duration=duration,
-        temperature=temperature,
-        top_k=top_k,
-        top_p=top_p,
-        cfg_coef=classifier_free_guidance
-    )
-    
-    # 条件付き生成（メロディと説明）
-    wav = model.generate_with_chroma([prompt], reference_audio.unsqueeze(0), progress=True)
-    
-    # 生成した音声を保存
-    output_filename = f"phantom_track_{int(time.time())}"
-    output_path = os.path.join(TEMP_DIR, output_filename)
-    audio_write(output_path, wav[0].cpu(), model.sample_rate, strategy="loudness", loudness_compressor=True)
-    
-    return f"{output_path}.wav"
+    try:
+        model.set_generation_params(
+            duration=duration,
+            temperature=temperature,
+            top_k=top_k,
+            top_p=top_p,
+            cfg_coef=classifier_free_guidance
+        )
+        
+        # 条件付き生成（メロディと説明）
+        wav = model.generate_with_chroma([prompt], reference_audio.unsqueeze(0), progress=True)
+        
+        # 生成した音声を保存
+        output_filename = f"phantom_track_{int(time.time())}"
+        output_path = os.path.join(TEMP_DIR, output_filename)
+        audio_write(output_path, wav[0].cpu(), model.sample_rate, strategy="loudness", loudness_compressor=True)
+        
+        return f"{output_path}.wav"
+    except Exception as e:
+        print(f"生成エラー: {e}")
+        return f"音楽生成中にエラーが発生しました: {str(e)}"
 
 # Gradio インターフェース
 def create_ui():
@@ -358,11 +377,26 @@ def create_ui():
                 status = gr.Markdown("### <span class='status-waiting'>システム待機中...</span>", elem_id="status-display")
         
         # イベント紐付け
-        generate_btn.click(
-            fn=lambda files, prompt, genre, duration, temperature, top_k, top_p, cfg, status: (
-                status.update(f"### <span class='status-generating'>⏳ 生成プロトコル実行中... [{duration}秒]</span>"),
-                generate(
-                    [f.name for f in files], 
+        def process_generation(files, prompt, genre, duration, temperature, top_k, top_p, cfg):
+            """生成処理をラップした関数"""
+            try:
+                # ステータス更新（これが直接は使えないため、戻り値として返す）
+                status_html = f"### <span class='status-generating'>⏳ 生成プロトコル実行中... [{duration}秒]</span>"
+                
+                # ファイル名の抽出（Gradio 3.50.0では異なる形式でファイルが渡される可能性がある）
+                track_paths = []
+                if files:
+                    for f in files:
+                        if isinstance(f, dict) and 'name' in f:
+                            track_paths.append(f['name'])
+                        elif hasattr(f, 'name'):
+                            track_paths.append(f.name)
+                        elif isinstance(f, str):
+                            track_paths.append(f)
+                
+                # 音楽生成
+                result = generate(
+                    track_paths,
                     prompt,
                     duration=duration,
                     genre=genre,
@@ -371,7 +405,16 @@ def create_ui():
                     top_p=top_p,
                     classifier_free_guidance=cfg
                 )
-            ),
+                
+                return status_html, result
+            except Exception as e:
+                print(f"処理エラー: {e}")
+                error_message = f"エラーが発生しました: {str(e)}"
+                return f"### <span style='color:red !important'>⚠️ {error_message}</span>", None
+
+        # ボタンクリックイベントを設定
+        generate_btn.click(
+            fn=process_generation,
             inputs=[audio_files, prompt, genre, duration, temperature, top_k, top_p, cfg],
             outputs=[status, output_audio]
         ).then(
