@@ -157,49 +157,19 @@ def create_ui():
                      "City Pop", "Metal", "Punk", "Blues", "Reggae", "World", "Dark Ambient", 
                      "Industrial", "Techno", "Cyberpunk", "Glitch"]
     
-    # ダークウェブ風のカスタムテーマを定義
-    dark_theme = gr.themes.Soft().set(
-        body_background_fill="#000000",
-        background_fill_primary="#101010",
-        background_fill_secondary="#0a0a0a",
-        button_primary_background_fill="#8a00e6",
-        button_primary_background_fill_hover="#b200ff",
-        button_primary_background_fill_dark="#6600cc",
-        button_primary_text_color="#ffffff",
-        button_secondary_background_fill="#222222",
-        button_secondary_background_fill_hover="#333333",
-        checkbox_background_color="#222222",
-        checkbox_background_color_selected="#8a00e6",
-        checkbox_border_color="#444444",
-        checkbox_border_color_focus="#8a00e6",
-        checkbox_border_color_hover="#8a00e6",
-        checkbox_border_color_selected="#8a00e6",
-        checkbox_label_background_fill="#101010",
-        checkbox_label_background_fill_hover="#0a0a0a",
-        checkbox_label_background_fill_selected="#101010",
-        checkbox_label_text_color="#ffffff",
-        checkbox_label_text_color_selected="#ffffff",
-        color_accent_soft="#b200ff",
-        color_accent="#8a00e6",
-        input_background_fill="#141414",
-        input_background_fill_dark="#0f0f0f",
-        input_border_color="#444444",
-        input_border_color_dark="#333333",
-        slider_color="#8a00e6",
-        slider_color_dark="#6600cc",
-        stat_background_fill="#141414",
-        border_color_primary="#333333",
-        border_color_accent="#8a00e6",
-        text_color="#00ff00",
-        body_text_color="#00cc00",
-        background_fill="#080808",
-        block_label_background_fill="#0a0a0a",
-        block_title_text_color="#00ff00",
-        border_color_accent_subdued="#6600cc"
-    )
+    # Gradio 3.50.0用にテーマを単純化
+    # 3.50.0ではセットアップ方法が異なるため、シンプルなテーマを使用
+    dark_theme = gr.themes.Soft()
     
-    # カスタムCSS
+    # カスタムCSS - UIのダークウェブ風スタイルを追加
     custom_css = """
+    body, .gradio-container {
+        background-color: #000000 !important;
+        color: #00ff00 !important;
+    }
+    .gradio-container {
+        max-width: 100% !important;
+    }
     .title-box {
         background: linear-gradient(to right, #000000, #0a0a0a);
         border-left: 3px solid #8a00e6;
@@ -213,12 +183,12 @@ def create_ui():
         font-family: 'Courier New', monospace;
         font-weight: bold;
         letter-spacing: 2px;
-        color: #00ff00;
+        color: #00ff00 !important;
         margin-bottom: 0.5rem;
     }
     .title-box h2 {
         font-family: 'Courier New', monospace;
-        color: #00cc00;
+        color: #00cc00 !important;
         font-size: 1.2rem;
         font-weight: normal;
     }
@@ -252,10 +222,37 @@ def create_ui():
         letter-spacing: 1px;
         font-weight: bold;
         font-family: 'Courier New', monospace;
+        background-color: #8a00e6 !important;
+        color: white !important;
+    }
+    .gr-button-primary:hover {
+        background-color: #b200ff !important;
     }
     .gr-accordion {
         border: 1px solid #222222;
         background: #0a0a0a;
+    }
+    
+    /* ダークウェブ風UIを強化するカスタムスタイル */
+    input, textarea, select, .gr-box, .gr-panel {
+        background-color: #101010 !important;
+        border: 1px solid #333333 !important;
+        color: #00ff00 !important;
+    }
+    .gr-box, .gr-panel {
+        background-color: #0a0a0a !important;
+    }
+    .gr-input-label, .gr-box-top, .gr-box-top * {
+        color: #00ff00 !important;
+    }
+    .gr-slider-handle {
+        background-color: #8a00e6 !important;
+    }
+    .gr-slider-track {
+        background-color: #222222 !important;
+    }
+    .gr-slider-track.gr-slider-track-active {
+        background-color: #6600cc !important;
     }
     """
     
