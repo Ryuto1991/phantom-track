@@ -373,9 +373,7 @@ def create_ui():
                 )
             ),
             inputs=[audio_files, prompt, genre, duration, temperature, top_k, top_p, cfg],
-            outputs=[status, output_audio],
-            concurrency_limit=1,
-            queue=True
+            outputs=[status, output_audio]
         ).then(
             fn=lambda: "### <span class='status-complete'>✓ 生成完了: トラック利用可能</span>",
             outputs=[status]
