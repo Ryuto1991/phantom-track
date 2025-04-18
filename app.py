@@ -1,13 +1,25 @@
 import os
+import sys
 import tempfile
 import time
+import traceback
 import torch
 import torchaudio
 import gradio as gr
 from pydub import AudioSegment
-from typing import List, Optional
-from audiocraft.models import MusicGen
+from typing import List, Optional, Dict, Any, Union
+
+# audiocraft関連のインポートを修正
+try:
+    from audiocraft.models import MusicGen
+except ImportError:
+    from audiocraft.models.musicgen import MusicGen
 from audiocraft.data.audio import audio_write
+
+# デバッグ用設定
+import logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger("phantom-track")
 
 # 環境変数の設定
 os.environ["TORCH_HOME"] = os.path.join(tempfile.gettempdir(), "torch")
