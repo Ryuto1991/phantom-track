@@ -1,0 +1,36 @@
+# Python関連の一時ファイル
+__pycache__/
+*.py[cod]
+*.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Jupyter Notebook関連
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# 環境設定
+.env
+.venv
+env/
+venv/
+ENV/
+
+# OS関連の一時ファイル
+.DS_Store
+Thumbs.db
